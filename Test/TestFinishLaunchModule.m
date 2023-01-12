@@ -8,10 +8,6 @@
 #import "TestFinishLaunchModule.h"
 #import "FBLaunchManager.h"
 
-LAUNCH_FUNCTION_EXPORT(TestFinishLaunchModule, FBLaunchStageDidFinishLaunch, FBLaunchPriorityLow) {
-    return [TestFinishLaunchModule start];
-}
-
 @implementation TestFinishLaunchModule
 
 + (id)start {
@@ -20,3 +16,7 @@ LAUNCH_FUNCTION_EXPORT(TestFinishLaunchModule, FBLaunchStageDidFinishLaunch, FBL
 }
 
 @end
+
+LAUNCH_MODULE_EXPORT(TestFinishLaunchModule, FBLaunchStageDidFinishLaunch, FBLaunchPriorityLow) {
+    return [TestFinishLaunchModule start];
+}

@@ -8,10 +8,6 @@
 #import "TestPreMainModule.h"
 #import "FBLaunchManager.h"
 
-LAUNCH_FUNCTION_EXPORT(TestPreMainModule, FBLaunchStagePreMain, FBLaunchPriorityLow) {
-    return [TestPreMainModule start];
-}
-
 @implementation TestPreMainModule
 
 + (id)start {
@@ -20,3 +16,7 @@ LAUNCH_FUNCTION_EXPORT(TestPreMainModule, FBLaunchStagePreMain, FBLaunchPriority
 }
 
 @end
+
+LAUNCH_MODULE_EXPORT(TestPreMainModule, FBLaunchStagePreMain, FBLaunchPriorityLow) {
+    return [TestPreMainModule start];
+}

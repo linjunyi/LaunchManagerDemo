@@ -10,7 +10,7 @@
 
 @implementation TestLazyLoadModule
 
-LAUNCH_FUNCTION_EXPORT(TestLazyLoadModule, FBLaunchStageLazyLoad, FBLaunchPriorityLow) {
+LAUNCH_MODULE_EXPORT(TestLazyLoadModule, FBLaunchStageLazyLoad, FBLaunchPriorityLow) {
     return [TestLazyLoadModule start];
 }
 

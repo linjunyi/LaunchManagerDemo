@@ -9,6 +9,4 @@
 
 @interface TestPreMainModule : NSObject
 
-+ (id)start;
-
 @end

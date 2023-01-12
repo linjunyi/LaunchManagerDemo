@@ -7,18 +7,18 @@
 
 #import <Foundation/Foundation.h>
 
-struct LAUNCH_FUNCTION {
+#define LAUNCH_MODULE_EXPORT(module, stage, priority) \
+static id _LAUNCH_START_##module(void); \
+__attribute__((used, section("__DATA,__launch"))) \
+static const struct LAUNCH_MODULE _LAUNCH_MODULE_##module = (struct LAUNCH_MODULE){(char *)&#module, stage, priority, (void *)(&_LAUNCH_START_##module)}; \
+static id _LAUNCH_START_##module(void) \
+
+struct LAUNCH_MODULE {
     char *module;
     int stage;
     int priority;
-    id (*function)(void);
+    id (*startFunc)(void);
 };
-
-#define LAUNCH_FUNCTION_EXPORT(module, stage, priority) \
-static id _LAUNCH_##module(void); \
-__attribute__((used, section("__DATA,__launch"))) \
-static const struct LAUNCH_FUNCTION _FUNC_##module = (struct LAUNCH_FUNCTION){(char *)&#module, stage, priority, (void *)(&_LAUNCH_##module)}; \
-static id _LAUNCH_##module(void) \
 
 typedef NS_ENUM(NSInteger, FBLaunchStage) {
     FBLaunchStagePreMain = 0,
@@ -40,7 +40,8 @@ typedef NS_ENUM(NSInteger, FBLaunchPriority) {
 @property (nonatomic, strong) NSString *module;
 @property (nonatomic, assign) FBLaunchStage stage;
 @property (nonatomic, assign) FBLaunchPriority priority;
-@property (nonatomic, assign) id(*startMethod)(void);
+@property (nonatomic, assign) id(*startFunc)(void);
+@property (nonatomic, assign) BOOL alreadStart;
 @property (nonatomic, strong) id moduleInstance;
 
 @end

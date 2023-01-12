@@ -30,7 +30,7 @@ __attribute__((constructor)) static void executePreMainLaunchers() {
 
 @interface FBLaunchManager()
 
-@property (nonatomic, strong) NSMutableArray<FBLaunchModule *> *modules;
+@property (nonatomic, strong) NSArray<FBLaunchModule *> *modules;
 
 @end
 
@@ -47,12 +47,12 @@ __attribute__((constructor)) static void executePreMainLaunchers() {
 
 - (id)init {
     if (self = [super init]) {
-        _modules = [self modulesInDyld].mutableCopy;
+        [self getAllModules];
     }
     return self;
 }
 
-- (NSMutableArray<FBLaunchModule *> *)modulesInDyld {
+- (void)getAllModules {
     NSString *appName = [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleExecutableKey];
     NSString *fullAppName = [NSString stringWithFormat:@"/%@.app/", appName];
     char *fullAppNameC = (char *)[fullAppName UTF8String];
@@ -74,21 +74,22 @@ __attribute__((constructor)) static void executePreMainLaunchers() {
         const FBMachOExportValue dliFbase = (FBMachOExportValue)info.dli_fbase;
         const FBMachOExportSection *section = FBGetSectByNameFromHeader(header, "__DATA", "__launch");
         if (section == NULL) continue;
-        int addrOffset = sizeof(struct LAUNCH_FUNCTION);
+        int addrOffset = sizeof(struct LAUNCH_MODULE);
         for (FBMachOExportValue addr = section->offset;
              addr < section->offset + section->size;
              addr += addrOffset) {
             
-            struct LAUNCH_FUNCTION entry = *(struct LAUNCH_FUNCTION *)(dliFbase + addr);
+            struct LAUNCH_MODULE entry = *(struct LAUNCH_MODULE *)(dliFbase + addr);
             FBLaunchModule *module = [[FBLaunchModule alloc] init];
             module.module = [NSString stringWithCString:entry.module encoding:NSUTF8StringEncoding];
             module.stage = entry.stage;
             module.priority = entry.priority;
-            module.startMethod = entry.function;
+            module.startFunc = entry.startFunc;
             [result addObject:module];
         }
     }
-    return result;
+    
+    _modules = [NSArray arrayWithArray:result];
 }
 
 - (void)executeLaunchersForStage:(FBLaunchStage)stage {
@@ -96,29 +97,34 @@ __attribute__((constructor)) static void executePreMainLaunchers() {
         return;
     }
     NSMutableArray *moduleAry = [NSMutableArray new];
+    
+    //阶段
     for (FBLaunchModule *m in _modules) {
         if (m.stage == stage) {
             [moduleAry addObject:m];
         }
     }
-        
+    
+    //优先级
     [moduleAry sortUsingComparator:^NSComparisonResult(FBLaunchModule * _Nonnull obj1, FBLaunchModule * _Nonnull obj2) {
         return obj1.priority < obj2.priority;
     }];
     
     for (NSInteger i = 0; i < [moduleAry count]; i++) {
         FBLaunchModule *module = moduleAry[i];
-        module.moduleInstance = module.startMethod();
+        module.moduleInstance = module.startFunc();
+        module.alreadStart = YES;
     }
 }
 
 - (id)getModuleByName:(NSString *)moduleName {
     for (FBLaunchModule *m in _modules) {
         if ([m.module isEqualToString:moduleName]) {
-            if (m.moduleInstance) {
+            if (m.alreadStart) {
                 return m.moduleInstance;
             }
-            m.moduleInstance = m.startMethod();
+            m.moduleInstance = m.startFunc();
+            m.alreadStart = YES;
             return m.moduleInstance;
         }
     }
